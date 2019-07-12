@@ -1,0 +1,44 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: ssl-exporter
+  namespace: ops
+  labels:
+    app: ssl-exporter
+spec:
+  template:
+    metadata:
+      labels:
+        app: ssl-exporter
+    spec:
+      containers:
+      - name: ssl-exporter
+        image: jxregistry.docker.fccs.cn:28888/zj/golang/ssl-exporter:1.0.0
+        args:
+        - --web.listen-address=:9111
+        - --ssl.cluster=c1
+        - --ssl.prefix=/etc/kubernetes/pki
+        ports:
+        - containerPort: 9111
+          hostPort: 9111
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: certs-dir
+          mountPath: /etc/kubernetes/pki
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      terminationGracePeriodSeconds: 30
+      hostNetwork: true
+      volumes:
+      - name: certs-dir
+        hostPath:
+          path: /etc/kubernetes/pki
+      imagePullSecrets:
+      - name: myregistrykey
